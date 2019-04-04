@@ -51,7 +51,7 @@ def replacer(key,keyarr,prefix,seedfname):
 					#line = line.replace(seedfname,seedfname + "_{:02}".format(num))
 					fout.write(line)
 	return(seedfname + '_' + key)
-def array_replacer(key,keyarr,prefix,seedfname,savename = ''):
+'''def array_replacer(key,keyarr,prefix,seedfname,savename = ''):
 	#keyarr = np.linspace(keymin,keymax,keystep)
 	#keyarr = np.array(x + step for step in )
 	keyarrstr = [re.sub('[\n\[\]]','',np.array2string(x,precision = 4, separator = ',')) for x in keyarr]
@@ -67,7 +67,19 @@ def array_replacer(key,keyarr,prefix,seedfname,savename = ''):
 					#line = line.replace(seedfname,seedfname + "_{:02}".format(num))
 					fout.write(line)
 				fout.close()
-			
+'''
+def array_replacer(key,keyarr,prefix,seedfname,savename = ''):
+	keyarrstr = [re.sub('[\n\[\]]','',np.array2string(x,precision = 4, separator = ',')) for x in keyarr]
+	for num,val in enumerate(keyarrstr):
+		with open(prefix + seedfname + '.cfg','rt') as fin:
+			with open(prefix + seedfname + '_' + key + '_' + savename +"_{:02}.cfg".format(num), "wt") as fout:	
+				for line in fin:
+
+					pattern = lambda x : x + '\s*=\s*["a-zA-Z/_-]+|' + x + "\s*=\s*(\d+(.\d*))|" + x + "\s*=\s*"
+					line = re.sub(pattern(key),re.sub('[\n\[\]]','',key + " = {}".format(val)),line)
+					line = re.sub(pattern('band_prefix'),re.sub('[\n\[\]]','','band_prefix' + ' = "output/' + seedfname + '_{:02}"'.format(num)),line)
+					fout.write(line)
+				fout.close()			
 	
 
 

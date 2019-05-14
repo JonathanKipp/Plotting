@@ -1,69 +1,12 @@
-from kipp_plotbib import replacer, array_replacer,canting_bandplotter,replacer_samefile,sigma_trend_antisym
+from kipp_plotbib import replacer, array_replacer,canting_bandplotter,replacer_samefile,sigma_trend_antisym,keyarrgen
 import numpy as np      
 import glob, os, sys
 from subprocess import call
 
-def keyarrgen(rotation,checker,ext = 0.01,steps = 5,start = 0,start2 =0):
-        print(rotation)
-        if rotation == 'ferro':
-                temp = np.pi/2*np.linspace(-1,2,4)
-                temp2 = temp
-                
-        elif rotation == 'inplane':
-                temp = np.pi/2*np.array([-1,1,-1,1])
-                temp2 = np.pi/2*np.array([-1,1,1,-1])
-                
-        elif rotation == 'oop':
-                temp = np.pi*np.array([0,1,0,1])
-                temp2 = np.pi*np.array([0,1,1,0])
-        elif rotation == 'scanoopferro':
-
-                temp = np.pi*(0 + np.linspace(-ext,ext,steps))
-                temp2 = - temp
-        elif rotation == 'scanoopantiferro':
-
-                temp = np.pi*(0 + np.linspace(-ext,ext,steps))
-                temp2 = np.pi*(1 + np.linspace(-ext,ext,steps))
-        elif rotation == 'scanipferro':
-
-                temp = np.pi/2*(1 + np.linspace(0,ext,steps))
-                temp2 = np.pi/2*(1 + np.linspace(0,ext,steps))
-        elif rotation == 'scanipferroflip':
-
-                temp = np.pi/2*(1 - np.linspace(0,ext,steps))
-                temp2 = np.pi/2*(1 - np.linspace(0,ext,steps))                
-        elif rotation == 'scanipantiferro1':
-
-                temp = np.pi/2*(1 + np.linspace(-ext,ext,steps))
-                temp2 = np.pi/2*(-1 - np.linspace(-ext,ext,steps))
-        elif rotation == 'scanipantiferro2':
-                temp = np.pi/2*(-1 - np.linspace(-ext,ext,steps))
-                temp2 = np.pi/2*(1 + np.linspace(-ext,ext,steps))
-        elif rotation == 'scanipantiferro3':
-                temp = np.pi/2*(1 - np.linspace(-ext,ext,steps))
-                temp2 = np.pi/2*(-1 + np.linspace(-ext,ext,steps))
-        elif rotation == 'scanipantiferro4':
-                temp = np.pi/2*(1 + np.linspace(-ext,ext,steps))
-                temp2 = np.pi/2*(-1 - np.linspace(-ext,ext,steps))
-        elif rotation == 'scancol':
-                temp = np.pi*(start + np.linspace(0,ext,steps))
-                temp2 = np.pi*(start2 + np.linspace(0,ext,steps))
-        elif rotation == 'scancolflip':
-                temp = np.pi*(-start + np.linspace(0,ext,steps))
-                temp2 = np.pi*(-start2 + np.linspace(0,ext,steps))
-        elif rotation == 'scansingular':
-                temp = np.pi*(start + np.linspace(0,ext,steps))
-                temp2 = np.pi*(start2 + np.zeros(steps))
-        elif rotation == 'scansingularflip':
-                temp = np.pi*(start - np.linspace(0,ext,steps))
-                temp2 = np.pi*(start2 + np.zeros(steps))                
-        else:
-                print('Rotation not known. Valid rotations are: 0 ::"ferro", 1 :: "inplane", 2 :: "oop"')
-                checker = 1
-                return(None)
-        returntemp = np.array([temp,temp2]).transpose()
-        return(returntemp)
+def offset_in_deg(val):
+        return(val/180.)
 key = 'anticol_theta'
+coltype = 'col'
 rotation = 'scancol'
 rotation2 = 'scancolflip'
 seedfname = "path_rel_G-K-Kprime"
@@ -90,47 +33,43 @@ inputname2 = seedfname + '_' + key + '_' + rotation2
 #inputname2 = 'sq_fill_anticol'
 
         #GENERATE REPLACEMENTS
-offset = 5./180
-steps = 21
-ext = 1.0
+offset = offset_in_deg(0)
+steps = 4
+ext = 0.5
 checker = 0
-start1 = 1.0
+start1 = 0.0
 start2 = 0.0
-keyarr = keyarrgen(rotation,checker,ext = ext,steps = steps,start = start1 - offset,start2 = start2 + offset)
-keyarr2 = keyarrgen(rotation2,checker,ext = ext,steps = steps,start = start1 - offset,start2 = start2 + offset)
+keyarr = keyarrgen(rotation,checker,ext = ext,steps = steps,start1 = start1,start2 = start2 + offset)
+keyarr2 = keyarrgen(rotation,checker,ext = ext,steps = steps,start1 = start1 + offset,start2 = start2)
+lambdaarr = np.linspace(0,3,6)
+tsoarr = np.linspace(0,3,6)
 fitarray = np.arange(steps/2-1,steps/2+2,dtype = int)
-print(fitarray)
-
-'''
-        #REPLACE MAGTYPE
-replacer_samefile(key = 'mag_type',keyarr = [magtype],prefix = prefix_inis,seedfname =seedfname)
-        #REPLACE FERRO_PHI
-replacer_samefile(key = 'ferro_phi',keyarr = [ferro_phi],prefix = prefix_inis,seedfname =seedfname)
-        #REPLACE FERRO_THETA
-replacer_samefile(key = 'ferro_theta',keyarr = [ferro_theta],prefix = prefix_inis,seedfname =seedfname)
-        #REPLACE ANTICOL_PHI
-replacer_samefile(key = 'anticol_phi',keyarr = [anticol_phi],prefix = prefix_inis,seedfname =seedfname)
-        #REPLACE SAVE_STR
-#replacer_samefile(key = 'band_prefix',keyarr = [save_prefix + ""],prefix = prefix_inis,seedfname =seedfname)
-'''
-
 if checker == 0:
         #REPLACE ANTICOL_THETA
-        '''
+        '''        #CHANGE ROTATION
         array_replacer(key = key,keyarr=keyarr,prefix = prefix_inis,seedfname = seedfname,savename = rotation)
         array_replacer(key = key,keyarr=keyarr2,prefix = prefix_inis,seedfname = seedfname,savename = rotation2)
+                #CHANGE LAMBDA,TSO
+        for j in range(keyarr.shape[0]):
+                array_replacer(key = 'lambda',keyarr=lambdaarr,prefix = prefix_inis,seedfname = inputname + '_{:02}'.format(j),savename = '')
+                array_replacer(key = 'lambda',keyarr=lambdaarr,prefix = prefix_inis,seedfname = inputname2 + '_{:02}'.format(j),savename = '')
+                for l in range(lambdaarr.shape[0]):
+                        array_replacer(key = 't_so',keyarr=tsoarr,prefix = prefix_inis,seedfname = inputname + '_{:02}'.format(j) + '_lambda' + '_{:02}'.format(l),savename = '')
+                        array_replacer(key = 't_so',keyarr=tsoarr,prefix = prefix_inis,seedfname = inputname2 + '_{:02}'.format(j) + '_lambda' + '_{:02}'.format(l),savename = '')
         #RUN ALL SCRIPTS
         
         for file in glob.glob(prefix_inis + inputname + "*.cfg"):
 	        try:
-		        call (prefix_stb + "stb.x " + file,shell = 'True')
+		        call ("mpirun -np 3 " + prefix_stb + "stb.x " + file,shell = 'True')
 	
 	        except:
 		        print("Unexpected error:",sys.exc_info()[0])
         '''
         #PLOT DATA
         if plot_log == True:
-                #canting_bandplotter(fname = inputname,fname2 = inputname2,files = keyarr.shape[0],bands = [0,1,2,3],combine = False,dos = False,hall = True,save_str = save_str,label = label)
+                
+                #canting_bandplotter(fname = inputname,fname2 = inputname2,files = keyarr.shape[0],bands = [0,1,2,3],combine = False,dos = True,hall = False,save_str = save_str,label = label,coltype = coltype)
                 #canting_bandplotter(fname = inputname,files = keyarr.shape[0],bands = [0,1,2,3],combine = True,dos = True,hall = True,save_str = save_str,label = label)
-                sigma_trend_antisym(fname = inputname,fname2 = inputname2,files = keyarr.shape[0],save_str = save_str,prom = prom,scale = 0.0,peakexp = 3,fitarray = fitarray,fitlog = False,coltype = 'col',hc_sym = 'antisym')
-                sigma_trend_antisym(fname = inputname,fname2 = inputname2,files = keyarr.shape[0],save_str = save_str,prom = prom,scale = 0.0,peakexp = 3,fitarray = fitarray,fitlog = False,coltype = 'col',hc_sym = 'sym')
+                sigma_trend_antisym(fname = inputname,fname2 = inputname2,files = keyarr.shape[0],save_str = save_str,prom = prom,scale = 0.0,peakexp = 3,fitarray = fitarray,fitlog = False,coltype = coltype,hc_sym = 'antisym')
+                sigma_trend_antisym(fname = inputname,fname2 = inputname2,files = keyarr.shape[0],save_str = save_str,prom = prom,scale = 0.0,peakexp = 3,fitarray = fitarray,fitlog = False,coltype = coltype,hc_sym = 'sym')            
+        
